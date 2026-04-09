@@ -1,0 +1,182 @@
+:root {
+  --bg: #f4f1ea;
+  --card: #fffdf8;
+  --ink: #1f2933;
+  --muted: #52606d;
+  --line: #d9d2c3;
+  --accent: #125b50;
+  --accent-2: #ef7f1a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Helvetica Neue", "PingFang SC", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 10% 20%, #fff7de 0%, transparent 45%),
+    radial-gradient(circle at 90% 10%, #d8efe5 0%, transparent 40%),
+    var(--bg);
+}
+
+.app {
+  max-width: 960px;
+  margin: 24px auto 48px;
+  padding: 0 16px;
+}
+
+.hero {
+  margin-bottom: 18px;
+}
+
+.brand-logo {
+  width: clamp(120px, 22vw, 180px);
+  max-height: 180px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  margin-bottom: 10px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 40px);
+  letter-spacing: 0.02em;
+}
+
+.hero p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin: 12px 0;
+  box-shadow: 0 6px 22px rgba(31, 41, 51, 0.06);
+}
+
+.card h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #bcc4cc;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 180px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  color: #fff;
+  background: var(--accent);
+  font-weight: 600;
+}
+
+button:hover {
+  filter: brightness(0.95);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+#downloadBtn {
+  background: var(--accent-2);
+}
+
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+progress {
+  width: min(460px, 100%);
+  height: 14px;
+}
+
+.log {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #c8d0d8;
+  background: #f8fafc;
+  min-height: 140px;
+  max-height: 280px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .app {
+    margin-top: 14px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .hero p {
+    font-size: 14px;
+  }
+}

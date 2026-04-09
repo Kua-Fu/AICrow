@@ -1,0 +1,15 @@
+{
+  "name": "aicrow",
+  "version": "1.0.0",
+  "description": "字幕翻译小工具",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["subtitle", "translation", "ai"],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

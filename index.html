@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>字幕翻译小工具</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="apple-touch-icon" href="./assets/favicon.svg" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <img class="brand-logo" src="./assets/logo.png" alt="AICrow logo" />
+        <h1>字幕翻译小工具</h1>
+        <p>上传英文 .srt，分批调用大模型翻译为中文并导出新字幕。</p>
+      </header>
+
+      <section class="card">
+        <h2>1. 选择字幕文件</h2>
+        <input id="fileInput" type="file" accept=".srt" />
+        <p id="fileMeta" class="muted">未选择文件</p>
+      </section>
+
+      <section class="card">
+        <h2>2. 模型设置</h2>
+        <div class="grid">
+          <label>
+            Base URL
+            <input
+              id="openaiBaseInput"
+              type="text"
+              placeholder="http://one-api.dataflux.cn/v1"
+              value="http://one-api.dataflux.cn/v1"
+            />
+          </label>
+
+          <label>
+            模型名称
+            <input id="openaiModelInput" type="text" value="glm-5" />
+          </label>
+
+          <label>
+            每批翻译条数
+            <input id="batchSizeInput" type="number" min="1" value="40" />
+          </label>
+
+          <label>
+            并发请求数
+            <input id="concurrencyInput" type="number" min="1" value="4" />
+          </label>
+
+          <label>
+            失败重试次数
+            <input id="retryInput" type="number" min="0" value="2" />
+          </label>
+
+          <label>
+            批次间隔(ms)
+            <input id="delayInput" type="number" min="0" value="300" />
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>3. 提示词</h2>
+        <p class="muted">默认读取并展示 <code>config.env</code> 里的 <code>PROMPT</code>。</p>
+        <textarea id="promptInput" rows="10"></textarea>
+      </section>
+
+      <section class="card">
+        <h2>4. 开始翻译</h2>
+        <p id="outputPathText" class="muted">输出文件：尚未开始</p>
+        <p id="timingText" class="muted">耗时：尚未开始</p>
+        <div class="actions">
+          <button id="translateBtn">开始翻译</button>
+          <button id="downloadBtn" disabled>下载中文字幕 .srt</button>
+        </div>
+        <div class="progress-wrap">
+          <progress id="progressBar" value="0" max="100"></progress>
+          <span id="progressText">0%</span>
+        </div>
+        <pre id="logBox" class="log"></pre>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

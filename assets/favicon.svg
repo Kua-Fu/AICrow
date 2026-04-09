@@ -1,0 +1,24 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="7" y1="7" x2="57" y2="57" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1C2933" />
+      <stop offset="1" stop-color="#101820" />
+    </linearGradient>
+    <linearGradient id="bubble" x1="16" y1="10" x2="42" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F6B26B" />
+      <stop offset="1" stop-color="#E98A2A" />
+    </linearGradient>
+  </defs>
+
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#bg)" />
+  <rect x="4" y="4" width="56" height="56" rx="14" stroke="#2F3D49" stroke-width="1.5" />
+
+  <ellipse cx="30" cy="41" rx="11.5" ry="9.3" fill="#060A0E" />
+  <ellipse cx="24" cy="31" rx="5.9" ry="5.6" fill="#0A1117" />
+  <path d="M29 31L40 29L29 37V31Z" fill="#F3A24A" />
+  <circle cx="22.7" cy="29.7" r="1.25" fill="#EAF3FF" />
+  <circle cx="22.35" cy="29.45" r="0.62" fill="#0A1118" />
+
+  <path d="M14 12H34C36.2 12 38 13.8 38 16V20.7C38 22.9 36.2 24.7 34 24.7H24.6L20.6 28L21.3 24.7H14C11.8 24.7 10 22.9 10 20.7V16C10 13.8 11.8 12 14 12Z" fill="url(#bubble)" />
+  <text x="20.5" y="20.2" fill="#131D26" font-size="9.2" font-family="Avenir Next, Helvetica Neue, Arial, sans-serif" font-weight="900">文</text>
+</svg>

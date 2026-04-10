@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>时间戳转换 - AICrow</title>
+    <link rel="icon" type="image/png" href="./assets/logo.png" />
+    <link rel="apple-touch-icon" href="./assets/logo.png" />
+    <link rel="stylesheet" href="./timestamp.css" />
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js"></script>
+  </head>
+  <body>
+    <main class="ts-app">
+      <header class="ts-hero">
+        <div class="hero-top">
+          <div class="hero-brand">
+            <video class="brand-logo" src="./assets/logo.mp4" autoplay muted loop playsinline></video>
+          </div>
+          <nav class="tool-tabs" aria-label="工具切换">
+            <a class="tool-tab" href="./index.html">字幕翻译</a>
+            <a class="tool-tab" href="./json-tool.html">JSON 展示</a>
+            <a class="tool-tab active" href="./timestamp.html" aria-current="page">时间戳转换</a>
+          </nav>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="current-time-row">
+          <div>
+            <p class="eyebrow">当前时间戳</p>
+            <div class="ts-display">
+              <span id="currentTs" class="ts-number">--</span>
+              <span id="currentUnitLabel" class="ts-unit">秒</span>
+            </div>
+          </div>
+          <div class="button-row">
+            <button id="toggleUnitBtn" type="button">切换单位</button>
+            <button id="copyNowBtn" type="button" class="ghost">复制</button>
+            <button id="toggleRunBtn" type="button" class="danger">停止</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="tabs-bar" role="tablist">
+          <button class="tab active" data-tab="single">单个转换</button>
+          <button class="tab" data-tab="batch" disabled title="稍后提供">批量转换</button>
+        </div>
+
+        <div class="converter" data-panel="single">
+          <div class="converter-row">
+            <div class="converter-title">
+              <span class="icon">🕒</span>
+              <div>
+                <p class="eyebrow">时间戳转日期时间</p>
+                <p class="muted">支持秒 / 毫秒 / 微秒 / 纳秒</p>
+              </div>
+            </div>
+            <div class="converter-actions">
+              <input id="tsInput" type="text" placeholder="1775717476" autocomplete="off" />
+              <select id="tsUnitSelect">
+                <option value="s">秒 (s)</option>
+                <option value="ms">毫秒 (ms)</option>
+                <option value="us">微秒 (µs)</option>
+                <option value="ns">纳秒 (ns)</option>
+              </select>
+              <button id="tsToDateBtn" type="button">转换</button>
+              <input id="dateOutput" type="text" readonly placeholder="转换结果" />
+              <select id="tzSelect">
+                <option value="Asia/Shanghai">Asia/Shanghai</option>
+                <option value="UTC">UTC</option>
+                <option value="America/Los_Angeles">America/Los_Angeles</option>
+                <option value="Europe/London">Europe/London</option>
+                <option value="Asia/Tokyo">Asia/Tokyo</option>
+              </select>
+              <button id="copyDateBtn" type="button" class="ghost">复制</button>
+            </div>
+          </div>
+
+          <div class="converter-row">
+            <div class="converter-title">
+              <span class="icon">📅</span>
+              <div>
+                <p class="eyebrow">日期时间转时间戳</p>
+                <p class="muted">可选时区与输出精度</p>
+              </div>
+            </div>
+            <div class="converter-actions">
+              <input id="dateInput" type="text" placeholder="2026-04-09 14:51:16" autocomplete="off" />
+              <select id="tzSelect2">
+                <option value="Asia/Shanghai">Asia/Shanghai</option>
+                <option value="UTC">UTC</option>
+                <option value="America/Los_Angeles">America/Los_Angeles</option>
+                <option value="Europe/London">Europe/London</option>
+                <option value="Asia/Tokyo">Asia/Tokyo</option>
+              </select>
+              <button id="dateToTsBtn" type="button">转换</button>
+              <input id="tsOutput" type="text" readonly placeholder="转换结果" />
+              <select id="tsOutUnitSelect">
+                <option value="ms">毫秒 (ms)</option>
+                <option value="s">秒 (s)</option>
+                <option value="us">微秒 (µs)</option>
+                <option value="ns">纳秒 (ns)</option>
+              </select>
+              <button id="copyTsBtn" type="button" class="ghost">复制</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./timestamp.js"></script>
+  </body>
+</html>

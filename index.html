@@ -4,16 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>字幕翻译小工具</title>
-    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
-    <link rel="apple-touch-icon" href="./assets/favicon.svg" />
+    <link rel="icon" type="image/png" href="./assets/logo.png" />
+    <link rel="apple-touch-icon" href="./assets/logo.png" />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <main class="app">
       <header class="hero">
-        <img class="brand-logo" src="./assets/logo.png" alt="AICrow logo" />
-        <h1>字幕翻译小工具</h1>
-        <p>上传英文 .srt，分批调用大模型翻译为中文并导出新字幕。</p>
+        <div class="hero-top">
+          <div class="hero-brand">
+            <video class="brand-logo" src="./assets/logo.mp4" autoplay muted loop playsinline></video>
+          </div>
+          <nav class="tool-tabs" aria-label="工具切换">
+            <a class="tool-tab active" href="./index.html" aria-current="page">字幕翻译</a>
+            <a class="tool-tab" href="./json-tool.html">JSON 展示</a>
+            <a class="tool-tab" href="./timestamp.html">时间戳转换</a>
+          </nav>
+        </div>
       </header>
 
       <section class="card">

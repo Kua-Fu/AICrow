@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JSON 展示工具 - AICrow</title>
+    <link rel="icon" type="image/png" href="./assets/logo.png" />
+    <link rel="apple-touch-icon" href="./assets/logo.png" />
+    <link rel="stylesheet" href="./json-tool.css" />
+  </head>
+  <body>
+    <main class="json-app">
+      <header class="json-hero">
+        <div class="hero-top">
+          <div class="hero-brand">
+            <video class="brand-logo" src="./assets/logo.mp4" autoplay muted loop playsinline></video>
+          </div>
+          <nav class="tool-tabs" aria-label="工具切换">
+            <a class="tool-tab" href="./index.html">字幕翻译</a>
+            <a class="tool-tab active" href="./json-tool.html" aria-current="page">JSON 展示</a>
+            <a class="tool-tab" href="./timestamp.html">时间戳转换</a>
+          </nav>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="toolbar">
+          <button id="btnValidate" type="button">校验</button>
+          <button id="btnFormat" type="button">格式化</button>
+          <button id="btnCompress" type="button">压缩</button>
+          <button id="btnSample" type="button">示例</button>
+          <button id="btnClear" type="button">清空</button>
+          <button id="btnCopy" type="button">复制格式化结果</button>
+          <label class="file-label">
+            导入 JSON 文件
+            <input id="fileInput" type="file" accept=".json,application/json" />
+          </label>
+        </div>
+        <p id="statusText" class="status neutral">等待输入 JSON。</p>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>输入区</h2>
+          <textarea id="jsonInput" spellcheck="false" placeholder='例如：{"name":"AICrow","items":[1,2,3]}'></textarea>
+        </article>
+
+        <article class="panel">
+          <h2>树形视图</h2>
+          <div class="tree-actions">
+            <button id="btnExpandAll" type="button">展开全部</button>
+            <button id="btnCollapseAll" type="button">收起全部</button>
+          </div>
+          <div id="treeContainer" class="tree-root"></div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>格式化结果</h2>
+        <pre id="prettyOutput" class="code"></pre>
+      </section>
+    </main>
+
+    <script src="./json-tool.js"></script>
+  </body>
+</html>

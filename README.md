@@ -1,6 +1,9 @@
-# AICrow Subtitle Translator
+# AICrow 工具集
 
-本项目是一个本地运行的字幕翻译工具：上传英文 `.srt`，分批调用大模型翻译为中文，实时写入新字幕文件。
+本项目包含三个本地小工具：
+- 字幕翻译：上传英文 `.srt`，分批调用大模型翻译为中文，实时写入新字幕文件。
+- JSON 展示：校验、格式化、压缩、树形浏览 JSON。
+- 时间戳转换：秒/毫秒/微秒/纳秒 与日期时间互转，可选时区。
 
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=nodedotjs&logoColor=white)
 ![npm](https://img.shields.io/badge/npm-9%2B-CB3837?logo=npm&logoColor=white)
@@ -15,6 +18,7 @@
 - 显示每批耗时和总耗时
 - 翻译过程中实时写入 `outputs/` 文件
 - 自动忽略空字幕条（保留原始序号，不重排）
+- 内置 JSON 展示工具（校验、格式化、压缩、树形展开/收起）
 
 ## 环境要求
 
@@ -30,7 +34,9 @@ npm start
 
 启动后访问：
 
-- `http://localhost:3000`
+- 时间戳转换（默认首页）：`http://localhost:3000`
+- 字幕翻译：`http://localhost:3000/index.html`
+- JSON 工具：`http://localhost:3000/json-tool.html`
 
 ## 运行截图
 

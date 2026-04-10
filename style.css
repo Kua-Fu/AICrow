@@ -23,13 +23,24 @@ body {
 }
 
 .app {
-  max-width: 960px;
-  margin: 24px auto 48px;
-  padding: 0 16px;
+  max-width: 1180px;
+  margin: 18px auto 40px;
+  padding: 0 14px;
 }
 
 .hero {
   margin-bottom: 18px;
+}
+
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hero-brand {
+  min-width: 0;
 }
 
 .brand-logo {
@@ -51,6 +62,36 @@ body {
 .hero p {
   margin: 8px 0 0;
   color: var(--muted);
+}
+
+.tool-tabs {
+  display: flex;
+  gap: 10px;
+  margin-top: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.tool-tab {
+  display: inline-block;
+  text-decoration: none;
+  color: #214f57;
+  font-weight: 700;
+  border: 1px solid #9bb8c1;
+  border-radius: 10px;
+  padding: 9px 18px;
+  background: #edf6f7;
+}
+
+.tool-tab:hover {
+  background: #e1f0f1;
+}
+
+.tool-tab.active {
+  color: #0e3f46;
+  background: #d8eeeb;
+  border-color: #78aeb1;
 }
 
 .card {
@@ -170,6 +211,16 @@ progress {
 @media (max-width: 640px) {
   .app {
     margin-top: 14px;
+  }
+
+  .hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tool-tabs {
+    margin-left: 0;
+    justify-content: flex-start;
   }
 
   .card {

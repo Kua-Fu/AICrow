@@ -1,0 +1,263 @@
+:root {
+  --bg: #f4f1ea;
+  --panel: #fffdf8;
+  --ink: #1f2933;
+  --muted: #52606d;
+  --line: #d9d2c3;
+  --accent: #125b50;
+  --accent-2: #ef7f1a;
+  --danger: #d73a49;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Helvetica Neue", "PingFang SC", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 18%, #fff7de 0%, transparent 45%),
+    radial-gradient(circle at 90% 12%, #d8efe5 0%, transparent 40%),
+    var(--bg);
+}
+
+.ts-app {
+  max-width: 1180px;
+  margin: 18px auto 40px;
+  padding: 0 14px;
+}
+
+.ts-hero {
+  margin-bottom: 12px;
+}
+
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hero-brand {
+  min-width: 0;
+}
+
+.brand-logo {
+  width: clamp(120px, 22vw, 180px);
+  max-height: 180px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  margin-bottom: 10px;
+}
+
+.ts-hero h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 40px);
+  letter-spacing: 0.02em;
+}
+
+.tool-tabs {
+  display: flex;
+  gap: 10px;
+  margin-top: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.tool-tab {
+  display: inline-block;
+  text-decoration: none;
+  color: #214f57;
+  font-weight: 700;
+  border: 1px solid #9bb8c1;
+  border-radius: 10px;
+  padding: 9px 18px;
+  background: #edf6f7;
+}
+
+.tool-tab:hover {
+  background: #e1f0f1;
+}
+
+.tool-tab.active {
+  color: #0e3f46;
+  background: #d8eeeb;
+  border-color: #78aeb1;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 6px 22px rgba(31, 41, 51, 0.06);
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #3c4b58;
+  font-size: 13px;
+}
+
+.current-time-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+}
+
+.ts-display {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ts-number {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+}
+
+.ts-unit {
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.button-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  color: #fff;
+  background: var(--accent);
+  font-weight: 700;
+}
+
+button:hover {
+  filter: brightness(0.95);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.ghost {
+  background: #dfe8ec;
+  color: #1f2f3a;
+  border: 1px solid #c5d0d6;
+}
+
+.danger {
+  background: var(--danger);
+}
+
+.tabs-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.tab {
+  border: 1px solid #9bb8c1;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #f1f6f7;
+  font-weight: 800;
+  color: #20444e;
+}
+
+.tab.active {
+  background: #d8eeeb;
+  border-color: #78aeb1;
+}
+
+.converter {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.converter-row {
+  border: 1px dashed #c7d2d9;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.converter-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.icon {
+  font-size: 18px;
+}
+
+.converter-actions {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 0.8fr 2fr 1.2fr 0.8fr;
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .converter-actions {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+input,
+select {
+  border: 1px solid #bcc4cc;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  font: inherit;
+}
+
+input[readonly] {
+  background: #f7fafc;
+  color: #1f2933;
+}
+
+.muted {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tool-tabs {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .current-time-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

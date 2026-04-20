@@ -4,14 +4,20 @@ const https = require("https");
 const http = require("http");
 const fs = require("fs");
 const crypto = require("crypto");
+const os = require("os");
+const { execFile } = require("child_process");
+const { promisify } = require("util");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const OUTPUT_DIR = path.join(__dirname, "outputs");
+const PDF_SPLIT_OUTPUT_DIR = path.join(OUTPUT_DIR, "pdf-split");
 const translationSessions = new Map();
+const execFileAsync = promisify(execFile);
 
 function ensureOutputDir() {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  fs.mkdirSync(PDF_SPLIT_OUTPUT_DIR, { recursive: true });
 }
 
 function loadConfig() {
@@ -74,7 +80,118 @@ function composeSrtBlock(entry, index) {
   return `${outputIndex}\n${timestamp}\n${text}\n\n`;
 }
 
-app.use(express.json({ limit: "10mb" }));
+function safeDecodeBase64(base64Data) {
+  const raw = String(base64Data || "").trim();
+  if (!raw) {
+    return Buffer.alloc(0);
+  }
+  const normalized = raw.includes(",") ? raw.split(",").pop() : raw;
+  return Buffer.from(normalized, "base64");
+}
+
+function postScriptEscape(filePath) {
+  return String(filePath)
+    .replaceAll("\\", "\\\\")
+    .replaceAll("(", "\\(")
+    .replaceAll(")", "\\)");
+}
+
+function toWebPath(filePath) {
+  const relative = path.relative(__dirname, filePath).split(path.sep).join("/");
+  return `/${relative}`;
+}
+
+async function ensureGhostscriptAvailable() {
+  try {
+    await execFileAsync("gs", ["--version"]);
+  } catch (error) {
+    throw new Error(
+      "未检测到 Ghostscript（gs）。请先安装后重试，例如 macOS 可使用 `brew install ghostscript`。"
+    );
+  }
+}
+
+async function getPdfPageCount(pdfPath) {
+  const escapedPath = postScriptEscape(pdfPath);
+  const { stdout } = await execFileAsync("gs", [
+    "-q",
+    "-dNODISPLAY",
+    `--permit-file-read=${pdfPath}`,
+    "-c",
+    `(${escapedPath}) (r) file runpdfbegin pdfpagecount = quit`,
+  ]);
+  const pageCount = Number.parseInt(String(stdout || "").trim(), 10);
+  if (!Number.isInteger(pageCount) || pageCount <= 0) {
+    throw new Error("无法识别 PDF 页数，请确认文件未损坏且为标准 PDF。");
+  }
+  return pageCount;
+}
+
+function buildPdfSplitJobDir(sourceFileName) {
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z")
+    .replace("T", "_");
+  const jobName = `${sanitizeFileStem(sourceFileName)}_split_${stamp}_${crypto.randomUUID().slice(0, 8)}`;
+  return path.join(PDF_SPLIT_OUTPUT_DIR, jobName);
+}
+
+async function splitPdfByPages({ inputPdfPath, sourceFileName, pagesPerChunk }) {
+  const totalPages = await getPdfPageCount(inputPdfPath);
+  const outputDir = buildPdfSplitJobDir(sourceFileName);
+  fs.mkdirSync(outputDir, { recursive: true });
+
+  const stem = sanitizeFileStem(sourceFileName || "document.pdf");
+  const files = [];
+  let partIndex = 1;
+
+  for (let startPage = 1; startPage <= totalPages; startPage += pagesPerChunk) {
+    const endPage = Math.min(startPage + pagesPerChunk - 1, totalPages);
+    const outputName = `${stem}_part${partIndex}_p${startPage}-${endPage}.pdf`;
+    const outputPath = path.join(outputDir, outputName);
+
+    await execFileAsync("gs", [
+      "-q",
+      "-dNOPAUSE",
+      "-dBATCH",
+      "-dSAFER",
+      "-sDEVICE=pdfwrite",
+      "-dCompatibilityLevel=1.4",
+      `-dFirstPage=${startPage}`,
+      `-dLastPage=${endPage}`,
+      `-sOutputFile=${outputPath}`,
+      inputPdfPath,
+    ]);
+
+    const stat = fs.statSync(outputPath);
+    if (!stat.size) {
+      throw new Error(`拆分失败：${outputName} 未生成有效内容。`);
+    }
+
+    files.push({
+      fileName: outputName,
+      startPage,
+      endPage,
+      pages: endPage - startPage + 1,
+      sizeBytes: stat.size,
+      outputPath,
+      downloadUrl: toWebPath(outputPath),
+    });
+    partIndex += 1;
+  }
+
+  return {
+    sourceFileName: sourceFileName || "document.pdf",
+    totalPages,
+    pagesPerChunk,
+    chunkCount: files.length,
+    outputDir,
+    files,
+  };
+}
+
+app.use(express.json({ limit: "130mb" }));
 app.use(express.static(__dirname));
 
 async function proxyRequest(req, res) {
@@ -240,13 +357,61 @@ app.post("/api/translation/finalize", (req, res) => {
   }
 });
 
+app.post("/api/pdf/split", async (req, res) => {
+  const sourceFileName = String(req.body?.sourceFileName || "document.pdf").trim();
+  const pagesPerChunk = Number.parseInt(String(req.body?.pagesPerChunk || ""), 10);
+  const fileDataBase64 = req.body?.fileDataBase64;
+
+  if (!Number.isInteger(pagesPerChunk) || pagesPerChunk <= 0) {
+    return res.status(400).json({ error: "pagesPerChunk 必须是大于 0 的整数。" });
+  }
+  if (!String(fileDataBase64 || "").trim()) {
+    return res.status(400).json({ error: "缺少 PDF 文件内容。" });
+  }
+
+  const pdfBuffer = safeDecodeBase64(fileDataBase64);
+  if (!pdfBuffer.length) {
+    return res.status(400).json({ error: "PDF 文件内容为空或编码非法。" });
+  }
+  if (pdfBuffer.length > 80 * 1024 * 1024) {
+    return res.status(413).json({ error: "PDF 文件过大，请控制在 80MB 以内。" });
+  }
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "aicrow-pdf-split-"));
+  const inputPdfPath = path.join(tempDir, `${sanitizeFileStem(sourceFileName)}.pdf`);
+
+  try {
+    await ensureGhostscriptAvailable();
+    fs.writeFileSync(inputPdfPath, pdfBuffer);
+    const result = await splitPdfByPages({
+      inputPdfPath,
+      sourceFileName,
+      pagesPerChunk,
+    });
+    res.json(result);
+  } catch (error) {
+    console.error("PDF split error:", error.message);
+    res.status(500).json({ error: `PDF 拆分失败: ${error.message}` });
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "timestamp.html"));
 });
 
-app.listen(PORT, () => {
-  ensureOutputDir();
-  console.log(`AICrow 服务已启动: http://localhost:${PORT}`);
-  console.log(`字幕输出目录: ${OUTPUT_DIR}`);
-  console.log("按 Ctrl+C 停止服务");
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    ensureOutputDir();
+    console.log(`AICrow 服务已启动: http://localhost:${PORT}`);
+    console.log(`字幕输出目录: ${OUTPUT_DIR}`);
+    console.log("按 Ctrl+C 停止服务");
+  });
+}
+
+module.exports = {
+  app,
+  getPdfPageCount,
+  splitPdfByPages,
+};

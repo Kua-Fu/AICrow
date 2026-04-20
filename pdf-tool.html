@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF 拆分 - AICrow</title>
+    <link rel="icon" type="image/png" href="./assets/logo.png" />
+    <link rel="apple-touch-icon" href="./assets/logo.png" />
+    <link rel="stylesheet" href="./pdf-tool.css" />
+  </head>
+  <body>
+    <main class="pdf-app">
+      <header class="pdf-hero">
+        <div class="hero-top">
+          <div class="hero-brand">
+            <video class="brand-logo" src="./assets/logo.mp4" autoplay muted loop playsinline></video>
+          </div>
+          <nav class="tool-tabs" aria-label="工具切换">
+            <a class="tool-tab" href="./index.html">字幕翻译</a>
+            <a class="tool-tab" href="./json-tool.html">JSON 展示</a>
+            <a class="tool-tab" href="./timestamp.html">时间戳转换</a>
+            <a class="tool-tab active" href="./pdf-tool.html" aria-current="page">PDF 拆分</a>
+          </nav>
+        </div>
+      </header>
+
+      <section class="card">
+        <h2>1. 选择本地 PDF</h2>
+        <input id="pdfFileInput" type="file" accept=".pdf,application/pdf" />
+        <p id="fileMeta" class="muted">未选择文件</p>
+      </section>
+
+      <section class="card">
+        <h2>2. 拆分规则</h2>
+        <label class="inline-label" for="pagesPerChunkInput">
+          每个小 PDF 的页数
+          <input id="pagesPerChunkInput" type="number" min="1" value="5" />
+        </label>
+        <p class="muted">示例：输入 5 表示每 5 页拆成一个文件（最后一份可能不足 5 页）。</p>
+      </section>
+
+      <section class="card">
+        <h2>3. 开始拆分</h2>
+        <div class="actions">
+          <button id="splitBtn" type="button">开始拆分</button>
+        </div>
+        <p id="statusText" class="status neutral">等待上传 PDF。</p>
+        <p id="summaryText" class="muted">拆分结果：尚未开始</p>
+
+        <div id="resultWrap" class="result-wrap hidden">
+          <h3>拆分文件列表</h3>
+          <ul id="resultList" class="result-list"></ul>
+        </div>
+
+        <pre id="logBox" class="log"></pre>
+      </section>
+    </main>
+
+    <script src="./pdf-tool.js"></script>
+  </body>
+</html>

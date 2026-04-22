@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>单位换算 - AICrow</title>
+    <link rel="icon" type="image/png" href="./assets/logo.png" />
+    <link rel="apple-touch-icon" href="./assets/logo.png" />
+    <link rel="stylesheet" href="./unit-converter.css" />
+  </head>
+  <body>
+    <main class="unit-app">
+      <header class="unit-hero">
+        <div class="hero-top">
+          <div class="hero-brand">
+            <video class="brand-logo" src="./assets/logo.mp4" autoplay muted loop playsinline></video>
+          </div>
+          <nav class="tool-tabs" aria-label="工具切换">
+            <a class="tool-tab" href="./index.html">字幕翻译</a>
+            <a class="tool-tab" href="./json-tool.html">JSON 展示</a>
+            <a class="tool-tab" href="./timestamp.html">时间戳转换</a>
+            <a class="tool-tab" href="./pdf-tool.html">PDF 拆分</a>
+            <a class="tool-tab active" href="./unit-converter.html" aria-current="page">单位换算</a>
+          </nav>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h1>单位换算</h1>
+          <p>按分类选择单位，支持数据大小、时间间隔、流量、带宽、百分比、人民币与货币进制换算。</p>
+        </div>
+
+        <div class="converter-grid">
+          <label>
+            分类
+            <select id="categorySelect"></select>
+          </label>
+
+          <label>
+            输入值
+            <input id="valueInput" type="text" placeholder="例如 1024" autocomplete="off" />
+          </label>
+
+          <label>
+            源单位
+            <select id="fromUnitSelect"></select>
+          </label>
+
+          <label>
+            目标单位
+            <select id="toUnitSelect"></select>
+          </label>
+        </div>
+
+        <div class="action-row">
+          <button id="swapBtn" type="button" class="ghost">交换单位</button>
+          <button id="convertBtn" type="button">开始换算</button>
+          <button id="copyResultBtn" type="button" class="ghost">复制结果</button>
+        </div>
+
+        <p id="hintText" class="hint">输入数值后会自动换算，也可点击“开始换算”。</p>
+      </section>
+
+      <section class="panel result-panel">
+        <p class="eyebrow">换算结果</p>
+        <div id="resultText" class="result-value">--</div>
+        <p id="formulaText" class="formula">--</p>
+        <p id="smartResultText" class="smart-result">智能展示：--</p>
+      </section>
+    </main>
+
+    <script src="./unit-converter.js"></script>
+  </body>
+</html>

@@ -12,6 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const OUTPUT_DIR = path.join(__dirname, "outputs");
 const PDF_SPLIT_OUTPUT_DIR = path.join(OUTPUT_DIR, "pdf-split");
+const CSV_DIR = path.join(__dirname, "csvs");
+const WKSP_FILE_NAME = "wksp.xlsx";
+const METERING_PROJECTS = new Set(["logging", "tracing", "tracing_span"]);
 const translationSessions = new Map();
 const execFileAsync = promisify(execFile);
 
@@ -99,6 +102,479 @@ function postScriptEscape(filePath) {
 function toWebPath(filePath) {
   const relative = path.relative(__dirname, filePath).split(path.sep).join("/");
   return `/${relative}`;
+}
+
+function decodeXmlEntities(value) {
+  return String(value || "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
+function getXmlAttribute(tag, name) {
+  const match = String(tag || "").match(new RegExp(`\\b${name}="([^"]*)"`));
+  return match ? decodeXmlEntities(match[1]) : "";
+}
+
+function getXmlValue(xml, tagName) {
+  const match = String(xml || "").match(new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`));
+  return match ? decodeXmlEntities(match[1]) : "";
+}
+
+function parseSharedStrings(xml) {
+  const strings = [];
+  const itemPattern = /<si\b[^>]*>([\s\S]*?)<\/si>/g;
+  let itemMatch;
+
+  while ((itemMatch = itemPattern.exec(xml)) !== null) {
+    const textParts = [];
+    const textPattern = /<t\b[^>]*>([\s\S]*?)<\/t>/g;
+    let textMatch;
+
+    while ((textMatch = textPattern.exec(itemMatch[1])) !== null) {
+      textParts.push(decodeXmlEntities(textMatch[1]));
+    }
+
+    strings.push(textParts.join(""));
+  }
+
+  return strings;
+}
+
+function columnIndexFromCellRef(cellRef) {
+  const letters = String(cellRef || "").match(/^[A-Z]+/i)?.[0] || "";
+  if (!letters) {
+    return 0;
+  }
+
+  let index = 0;
+  for (const letter of letters.toUpperCase()) {
+    index = index * 26 + letter.charCodeAt(0) - 64;
+  }
+  return index - 1;
+}
+
+function columnNameFromIndex(index) {
+  let value = Number(index) + 1;
+  let name = "";
+
+  while (value > 0) {
+    const remainder = (value - 1) % 26;
+    name = String.fromCharCode(65 + remainder) + name;
+    value = Math.floor((value - 1) / 26);
+  }
+
+  return name || "A";
+}
+
+function parseWorksheetRows(xml, sharedStrings) {
+  const rows = [];
+  const rowPattern = /<row\b[^>]*>([\s\S]*?)<\/row>/g;
+  let rowMatch;
+
+  while ((rowMatch = rowPattern.exec(xml)) !== null) {
+    const row = [];
+    const cellPattern = /<c\b([^>]*)>([\s\S]*?)<\/c>/g;
+    let cellMatch;
+
+    while ((cellMatch = cellPattern.exec(rowMatch[1])) !== null) {
+      const attrs = cellMatch[1];
+      const body = cellMatch[2];
+      const cellRef = getXmlAttribute(attrs, "r");
+      const type = getXmlAttribute(attrs, "t");
+      const columnIndex = columnIndexFromCellRef(cellRef);
+      const rawValue = getXmlValue(body, "v");
+
+      if (type === "s") {
+        row[columnIndex] = sharedStrings[Number(rawValue)] || "";
+      } else if (type === "inlineStr") {
+        row[columnIndex] = getXmlValue(body, "t");
+      } else {
+        row[columnIndex] = rawValue;
+      }
+    }
+
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+async function unzipTextEntry(zipPath, entryName) {
+  const { stdout } = await execFileAsync("unzip", ["-p", zipPath, entryName], {
+    maxBuffer: 100 * 1024 * 1024,
+  });
+  return String(stdout || "");
+}
+
+async function loadWorkspaceIdList() {
+  const workbookPath = path.join(CSV_DIR, WKSP_FILE_NAME);
+
+  if (!fs.existsSync(workbookPath)) {
+    throw new Error(`未找到 ${path.join("csvs", WKSP_FILE_NAME)}。`);
+  }
+
+  const sharedStringsXml = await unzipTextEntry(workbookPath, "xl/sharedStrings.xml");
+  const sheetXml = await unzipTextEntry(workbookPath, "xl/worksheets/sheet1.xml");
+  const sharedStrings = parseSharedStrings(sharedStringsXml);
+  const rows = parseWorksheetRows(sheetXml, sharedStrings);
+  const normalizeHeader = (value) => String(value || "").replace(/\s+/g, "").toLowerCase();
+  const headerRowIndex = rows.findIndex((row) =>
+    row.some((cell) => ["空间id", "空间uuid", "workspaceuuid", "wkspuuid"].includes(normalizeHeader(cell)))
+  );
+
+  if (headerRowIndex === -1) {
+    throw new Error(`${WKSP_FILE_NAME} 中未找到“空间id”列。`);
+  }
+
+  const headerRow = rows[headerRowIndex];
+  const workspaceIdColumn = headerRow.findIndex((cell) =>
+    ["空间id", "空间uuid", "workspaceuuid", "wkspuuid"].includes(normalizeHeader(cell))
+  );
+  const ids = [];
+  const seen = new Set();
+
+  for (const row of rows.slice(headerRowIndex + 1)) {
+    const id = String(row[workspaceIdColumn] || "").trim();
+    if (!/^wksp_[A-Za-z0-9]+$/.test(id) || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    ids.push(id);
+  }
+
+  return {
+    ids,
+    sourceFile: path.join("csvs", WKSP_FILE_NAME),
+    rowCount: rows.length,
+    columnName: columnNameFromIndex(workspaceIdColumn),
+  };
+}
+
+function parseCsvRows(content) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+  const text = String(content || "").replace(/^\uFEFF/, "");
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+
+    if (inQuotes) {
+      if (char === '"' && text[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else if (char === '"') {
+        inQuotes = false;
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+    } else if (char === ",") {
+      row.push(field);
+      field = "";
+    } else if (char === "\n") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else if (char === "\r") {
+      if (text[index + 1] === "\n") {
+        index += 1;
+      }
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += char;
+    }
+  }
+
+  if (field || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function extractMessageWorkspaceId(message) {
+  return String(message || "").match(/\bwsuuid:\s*(wksp_[A-Za-z0-9]+)/)?.[1] || "";
+}
+
+function extractPointSegments(message) {
+  const text = String(message || "");
+  const starts = [];
+  const pattern = /\bdf_metering\b/g;
+  let match;
+
+  while ((match = pattern.exec(text)) !== null) {
+    starts.push(match.index);
+  }
+
+  return starts.map((start, index) => {
+    const end = starts[index + 1] || text.length;
+    return text.slice(start, end).trim();
+  });
+}
+
+function extractLastNsTimestamp(message) {
+  const matches = [...String(message || "").matchAll(/\b(\d{16,20})\b/g)];
+  return matches.length ? matches[matches.length - 1][1] : "";
+}
+
+function formatNsTimestamp(nsTimestamp) {
+  const ns = Number(nsTimestamp);
+  if (!Number.isFinite(ns) || ns <= 0) {
+    return "";
+  }
+
+  const date = new Date(Math.floor(ns / 1000000));
+  const parts = new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+    .formatToParts(date)
+    .reduce((acc, part) => {
+      acc[part.type] = part.value;
+      return acc;
+    }, {});
+
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
+}
+
+function extractLineProtocolValue(segment, key) {
+  const text = String(segment || "");
+  const needle = `${key}=`;
+  let position = 0;
+
+  while ((position = text.indexOf(needle, position)) !== -1) {
+    const before = text[position - 1];
+    if (position > 0 && before !== "," && before !== " " && before !== "\t") {
+      position += needle.length;
+      continue;
+    }
+
+    let cursor = position + needle.length;
+    if (text[cursor] === '"') {
+      cursor += 1;
+      let value = "";
+      while (cursor < text.length) {
+        const char = text[cursor];
+        if (char === "\\" && cursor + 1 < text.length) {
+          value += text[cursor + 1];
+          cursor += 2;
+          continue;
+        }
+        if (char === '"') {
+          return value;
+        }
+        value += char;
+        cursor += 1;
+      }
+      return value;
+    }
+
+    let end = cursor;
+    while (end < text.length && text[end] !== "," && !/\s/.test(text[end])) {
+      end += 1;
+    }
+    return text.slice(cursor, end).replace(/^"+|"+$/g, "");
+  }
+
+  return "";
+}
+
+function parseMeteringNumber(value) {
+  const normalized = String(value || "")
+    .trim()
+    .replace(/^"+|"+$/g, "")
+    .replace(/i$/, "");
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function addMeteringAggregate(map, key, base, count, hourCount, fileName) {
+  let item = map.get(key);
+  if (!item) {
+    item = {
+      ...base,
+      countTotal: 0,
+      hourCountTotal: 0,
+      pointCount: 0,
+      workspaces: new Set(),
+      files: new Set(),
+    };
+    map.set(key, item);
+  }
+
+  item.countTotal += count;
+  item.hourCountTotal += hourCount;
+  item.pointCount += 1;
+  item.workspaces.add(base.workspaceUUID);
+  item.files.add(fileName);
+}
+
+function serializeAggregate(item) {
+  return {
+    ...item,
+    countTotal: Math.round(item.countTotal),
+    hourCountTotal: Math.round(item.hourCountTotal),
+    workspaceCount: item.workspaces.size,
+    fileCount: item.files.size,
+    workspaces: undefined,
+    files: undefined,
+  };
+}
+
+function hasMeteringValue(item) {
+  return Number(item.countTotal) !== 0 || Number(item.hourCountTotal) !== 0;
+}
+
+async function analyzeMeteringFiles() {
+  const workspaceInfo = await loadWorkspaceIdList();
+  const workspaceIds = new Set(workspaceInfo.ids);
+
+  if (!fs.existsSync(CSV_DIR)) {
+    throw new Error("未找到 csvs 目录。");
+  }
+
+  const csvFiles = fs
+    .readdirSync(CSV_DIR)
+    .filter((fileName) => /^export-.*\.csv$/i.test(fileName))
+    .sort();
+
+  const totalsByProject = new Map();
+  const totalsByWorkspace = new Map();
+  const stats = {
+    workspaceIdCount: workspaceInfo.ids.length,
+    csvFileCount: csvFiles.length,
+    csvRowCount: 0,
+    matchedMessageCount: 0,
+    ignoredMessageCount: 0,
+    messageWithoutWorkspaceCount: 0,
+    meteringPointCount: 0,
+    targetPointCount: 0,
+  };
+  const warnings = [];
+
+  for (const fileName of csvFiles) {
+    const filePath = path.join(CSV_DIR, fileName);
+    const csvRows = parseCsvRows(fs.readFileSync(filePath, "utf-8"));
+    const headers = (csvRows[0] || []).map((header) => String(header || "").replace(/^\uFEFF/, "").trim());
+    const messageIndex = headers.findIndex((header) => header.toLowerCase() === "message");
+
+    if (messageIndex === -1) {
+      warnings.push(`${fileName} 缺少 Message 列，已跳过。`);
+      continue;
+    }
+
+    for (const row of csvRows.slice(1)) {
+      if (!row.some((cell) => String(cell || "").trim())) {
+        continue;
+      }
+
+      stats.csvRowCount += 1;
+      const message = String(row[messageIndex] || "");
+      const messageWorkspaceId = extractMessageWorkspaceId(message);
+
+      if (!messageWorkspaceId) {
+        stats.messageWithoutWorkspaceCount += 1;
+        continue;
+      }
+      if (!workspaceIds.has(messageWorkspaceId)) {
+        stats.ignoredMessageCount += 1;
+        continue;
+      }
+
+      stats.matchedMessageCount += 1;
+      const statisticNs = extractLastNsTimestamp(message);
+      const statisticTime = formatNsTimestamp(statisticNs);
+
+      for (const segment of extractPointSegments(message)) {
+        stats.meteringPointCount += 1;
+        const project = extractLineProtocolValue(segment, "project");
+
+        if (!METERING_PROJECTS.has(project)) {
+          continue;
+        }
+
+        const workspaceUUID = extractLineProtocolValue(segment, "workspaceUUID") || messageWorkspaceId;
+        if (!workspaceIds.has(workspaceUUID)) {
+          continue;
+        }
+
+        const subProject = extractLineProtocolValue(segment, "sub_project");
+        const count = parseMeteringNumber(extractLineProtocolValue(segment, "count"));
+        const hourCount = parseMeteringNumber(extractLineProtocolValue(segment, "hour_count"));
+        const projectKey = `${workspaceUUID}\0${project}\0${subProject}`;
+        const workspaceKey = `${workspaceUUID}\0${project}\0${subProject}\0${statisticTime}`;
+
+        stats.targetPointCount += 1;
+        addMeteringAggregate(
+          totalsByProject,
+          projectKey,
+          { project, subProject, workspaceUUID },
+          count,
+          hourCount,
+          fileName
+        );
+        addMeteringAggregate(
+          totalsByWorkspace,
+          workspaceKey,
+          { workspaceUUID, project, subProject, statisticTime, statisticNs },
+          count,
+          hourCount,
+          fileName
+        );
+      }
+    }
+  }
+
+  const byProject = [...totalsByProject.values()]
+    .map(serializeAggregate)
+    .filter(hasMeteringValue)
+    .sort(
+      (a, b) =>
+        a.workspaceUUID.localeCompare(b.workspaceUUID) ||
+        a.project.localeCompare(b.project) ||
+        a.subProject.localeCompare(b.subProject)
+    );
+  const byWorkspace = [...totalsByWorkspace.values()]
+    .map(serializeAggregate)
+    .filter(hasMeteringValue)
+    .sort(
+      (a, b) =>
+        a.workspaceUUID.localeCompare(b.workspaceUUID) ||
+        a.project.localeCompare(b.project) ||
+        a.subProject.localeCompare(b.subProject) ||
+        String(a.statisticTime || "").localeCompare(String(b.statisticTime || ""))
+    );
+
+  return {
+    generatedAt: new Date().toISOString(),
+    workspaceInfo,
+    csvFiles,
+    projects: [...METERING_PROJECTS],
+    stats,
+    byProject,
+    byWorkspace,
+    warnings,
+  };
 }
 
 async function ensureGhostscriptAvailable() {
@@ -260,6 +736,16 @@ app.get("/api/config", (req, res) => {
   });
 });
 
+app.get("/api/metering/analyze", async (req, res) => {
+  try {
+    const result = await analyzeMeteringFiles();
+    res.json(result);
+  } catch (error) {
+    console.error("Metering analyze error:", error.message);
+    res.status(500).json({ error: `计量分析失败: ${error.message}` });
+  }
+});
+
 app.post("/api/translation/start", (req, res) => {
   try {
     ensureOutputDir();
@@ -412,6 +898,8 @@ if (require.main === module) {
 
 module.exports = {
   app,
+  analyzeMeteringFiles,
+  loadWorkspaceIdList,
   getPdfPageCount,
   splitPdfByPages,
 };

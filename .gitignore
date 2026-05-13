@@ -6,6 +6,7 @@ __pycache__/
 # Node.js
 node_modules/
 outputs/
+csvs/
 
 # C extensions
 *.so

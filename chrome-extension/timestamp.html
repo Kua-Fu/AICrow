@@ -8,9 +8,9 @@
     <link rel="apple-touch-icon" href="./assets/logo.png" />
     <link rel="stylesheet" href="./timestamp.css" />
     <link rel="stylesheet" href="./common.css" />
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js"></script>
+    <script src="./vendor/dayjs.min.js"></script>
+    <script src="./vendor/utc.js"></script>
+    <script src="./vendor/timezone.js"></script>
   </head>
   <body>
     <main class="ts-app">
@@ -24,12 +24,10 @@
             </div>
           </div>
           <nav class="tool-tabs" aria-label="工具切换">
-            <a class="tool-tab" href="./index.html">字幕翻译</a>
+            <a class="tool-tab" href="./translator.html">字幕翻译</a>
             <a class="tool-tab" href="./json-tool.html">JSON 展示</a>
             <a class="tool-tab active" href="./timestamp.html" aria-current="page">时间戳转换</a>
-            <a class="tool-tab" href="./pdf-tool.html">PDF 拆分</a>
             <a class="tool-tab" href="./unit-converter.html">单位换算</a>
-            <a class="tool-tab" href="./metering-helper.html">计量助手</a>
           </nav>
         </div>
       </header>

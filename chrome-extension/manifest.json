@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "AICrow 工具集",
+  "description": "字幕翻译、JSON 展示、时间戳转换、单位换算（Chrome 扩展版）",
+  "version": "0.1.0",
+  "action": {
+    "default_icon": {
+      "128": "assets/logo.png"
+    }
+  },
+  "icons": {
+    "128": "assets/logo.png",
+    "48": "assets/logo.png",
+    "32": "assets/logo.png",
+    "16": "assets/logo.png"
+  },
+  "permissions": ["storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": ["*://*/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*", "vendor/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

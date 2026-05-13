@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>字幕翻译小工具</title>
+    <title>字幕翻译（扩展版）</title>
     <link rel="icon" type="image/png" href="./assets/logo.png" />
     <link rel="apple-touch-icon" href="./assets/logo.png" />
     <link rel="stylesheet" href="./style.css" />
@@ -17,16 +17,14 @@
             <video class="brand-logo" src="./assets/logo.mp4" autoplay muted loop playsinline></video>
             <div class="brand-copy">
               <h1>字幕翻译</h1>
-              <p>批量翻译 SRT，保留时间轴并实时写入结果。</p>
+              <p>插件内批量翻译 SRT，完成后自动下载结果。</p>
             </div>
           </div>
           <nav class="tool-tabs" aria-label="工具切换">
-            <a class="tool-tab active" href="./index.html" aria-current="page">字幕翻译</a>
+            <a class="tool-tab active" href="./translator.html" aria-current="page">字幕翻译</a>
             <a class="tool-tab" href="./json-tool.html">JSON 展示</a>
             <a class="tool-tab" href="./timestamp.html">时间戳转换</a>
-            <a class="tool-tab" href="./pdf-tool.html">PDF 拆分</a>
             <a class="tool-tab" href="./unit-converter.html">单位换算</a>
-            <a class="tool-tab" href="./metering-helper.html">计量助手</a>
           </nav>
         </div>
       </header>
@@ -79,13 +77,13 @@
 
       <section class="card">
         <h2>3. 提示词</h2>
-        <p class="muted">默认读取并展示 <code>config.env</code> 里的 <code>PROMPT</code>。</p>
+        <p class="muted">可直接修改，翻译时将作为系统提示词发送。</p>
         <textarea id="promptInput" rows="10"></textarea>
       </section>
 
       <section class="card">
         <h2>4. 开始翻译</h2>
-        <p id="outputPathText" class="muted">输出文件：尚未开始</p>
+        <p id="outputPathText" class="muted">输出：翻译完成后自动下载</p>
         <p id="timingText" class="muted">耗时：尚未开始</p>
         <div class="actions">
           <button id="translateBtn">开始翻译</button>
@@ -99,6 +97,6 @@
       </section>
     </main>
 
-    <script src="./app.js"></script>
+    <script src="./translator.js"></script>
   </body>
 </html>
